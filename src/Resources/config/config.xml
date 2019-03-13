@@ -10,8 +10,6 @@
     </parameters>
 
     <services>
-        <defaults public="false" />
-
         <service id="fos_elastica.client_prototype" class="FOS\ElasticaBundle\Elastica\Client" public="true" abstract="true">
             <argument type="collection" /> <!-- configuration -->
             <argument /> <!-- callback -->
@@ -37,7 +35,7 @@
 
         <service id="fos_elastica.paginator.subscriber" class="FOS\ElasticaBundle\Subscriber\PaginateElasticaQuerySubscriber" public="true">
             <tag name="knp_paginator.subscriber" />
-            <argument type="service" id="request_stack" />
+            <argument type="service" id="request" strict="false" />
         </service>
 
         <service id="fos_elastica.logger" class="FOS\ElasticaBundle\Logger\ElasticaLogger">

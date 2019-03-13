@@ -11,16 +11,13 @@
 
 namespace FOS\ElasticaBundle\Provider;
 
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
+use Symfony\Component\DependencyInjection\ContainerAware;
 
 /**
  * References persistence providers for each index and type.
  */
-class PagerProviderRegistry implements ContainerAwareInterface
+class PagerProviderRegistry extends ContainerAware
 {
-    use ContainerAwareTrait;
-
     /** @var array */
     private $providers = [];
 

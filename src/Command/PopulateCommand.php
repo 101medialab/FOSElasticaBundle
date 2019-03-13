@@ -24,7 +24,7 @@ use FOS\ElasticaBundle\Persister\InPlacePagerPersister;
 use FOS\ElasticaBundle\Persister\PagerPersisterInterface;
 use FOS\ElasticaBundle\Persister\PagerPersisterRegistry;
 use FOS\ElasticaBundle\Provider\PagerProviderRegistry;
-use Symfony\Component\Console\Command\Command;
+use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
@@ -36,7 +36,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 /**
  * Populate the search index.
  */
-class PopulateCommand extends Command
+class PopulateCommand extends ContainerAwareCommand
 {
     protected static $defaultName = 'fos:elastica:populate';
 
@@ -70,22 +70,6 @@ class PopulateCommand extends Command
      */
     private $resetter;
 
-    public function __construct(
-        EventDispatcherInterface $dispatcher,
-        IndexManager $indexManager,
-        PagerProviderRegistry $pagerProviderRegistry,
-        PagerPersisterRegistry $pagerPersisterRegistry,
-        Resetter $resetter
-    ) {
-        parent::__construct();
-
-        $this->dispatcher = $dispatcher;
-        $this->indexManager = $indexManager;
-        $this->pagerProviderRegistry = $pagerProviderRegistry;
-        $this->pagerPersisterRegistry = $pagerPersisterRegistry;
-        $this->resetter = $resetter;
-    }
-
     protected function configure()
     {
         $this
@@ -109,6 +93,12 @@ class PopulateCommand extends Command
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
+        $this->dispatcher = $this->getContainer()->get('event_dispatcher');
+        $this->indexManager = $this->getContainer()->get('fos_elastica.index_manager');
+        $this->pagerProviderRegistry = $this->getContainer()->get('fos_elastica.pager_provider_registry');
+        $this->pagerPersisterRegistry = $this->getContainer()->get('fos_elastica.pager_persister_registry');
+        $this->resetter = $this->getContainer()->get('fos_elastica.resetter');
+
         $this->pagerPersister = $this->pagerPersisterRegistry->getPagerPersister($input->getOption('pager-persister'));
 
         if (!$input->getOption('no-overwrite-format')) {
@@ -249,14 +239,21 @@ class PopulateCommand extends Command
             });
         }
 
-        $provider = $this->pagerProviderRegistry->getProvider($index, $type);
-
-        $pager = $provider->provide($options);
-
         $options['indexName'] = $index;
         $options['typeName'] = $type;
+        $options['offset'] = $offset;
 
-        $this->pagerPersister->insert($pager, $options);
+        $provider = $this->pagerProviderRegistry->getProvider($index, $type);
+
+        do {
+            $pager = $provider->provide($options);
+
+            $this->pagerPersister->insert($pager, $options);
+
+            $options['offset'] += count($pager->getCurrentPageResults());
+        } while(
+            count($pager->getCurrentPageResults()) != 0
+        );
 
         $this->dispatcher->dispatch(TypePopulateEvent::POST_TYPE_POPULATE, $event);
 

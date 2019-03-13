@@ -11,13 +11,10 @@
 
 namespace FOS\ElasticaBundle\Persister;
 
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
+use Symfony\Component\DependencyInjection\ContainerAware;
 
-final class PagerPersisterRegistry implements ContainerAwareInterface
+final class PagerPersisterRegistry extends ContainerAware
 {
-    use ContainerAwareTrait;
-
     /** 
      * @var string[]
      */

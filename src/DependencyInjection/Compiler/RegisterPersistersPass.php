@@ -50,7 +50,9 @@ final class RegisterPersistersPass implements CompilerPassInterface
                 }
 
                 $persisterDef = $container->getDefinition($id);
-                if (!$persisterDef->getFactory() && $persisterDef->getClass()) {
+
+                // FIXME: Might not work
+                if (!$persisterDef->getFactoryService() && $persisterDef->getClass()) {
                     // You are on your own if you use a factory to create a persister.
                     // It would fail in runtime if the factory does not return a proper persister.
                     $this->assertClassImplementsPersisterInterface($id, $container->getParameterBag()->resolveValue($persisterDef->getClass()));
